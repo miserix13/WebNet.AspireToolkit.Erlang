@@ -32,3 +32,51 @@ builder.AddErts("erlang", @"C:\Program Files\Erlang OTP", options =>
     options.EnvironmentVariables["ERL_FLAGS"] = "+S 2:2";
 });
 ```
+
+## Runtime package management
+
+`ErtsResourceOptions` now carries platform-specific ERTS runtime package options for Windows, Linux, and macOS. By default, the resource registers dashboard commands that let you inspect the available package options and select a runtime package from the Aspire dashboard.
+
+```csharp
+builder.AddErts("erlang", @"C:\Program Files\Erlang OTP", options =>
+{
+    options.RuntimePackageOptions.Clear();
+    options.RuntimePackageOptions.Add(new ErtsRuntimePackageOption(
+        ErtsPlatform.Windows,
+        "winget",
+        "winget",
+        "Erlang.ErlangOTP",
+        "winget install Erlang.ErlangOTP"));
+});
+```
+
+The `list-runtime-packages` dashboard command shows the registered options by platform. The `select-runtime-package` dashboard command accepts a target platform and option name, then returns the selected install command for the chosen ERTS package workflow.
+
+## Phase 2 usage
+
+The next surface adds a rebar3-backed Erlang application resource on top of an `ErtsResource`. This lets the library model compile/run concerns separately from runtime installation.
+
+```csharp
+using Aspire.Hosting;
+using WebNet.AspireToolkit.Erlang;
+
+var builder = DistributedApplication.CreateBuilder(args);
+
+var runtime = builder.AddErts("erlang", @"C:\Program Files\Erlang OTP");
+
+builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "sample_app", options =>
+{
+    options.Profile = "prod";
+    options.Otel.Enabled = true;
+    options.Otel.ServiceName = "sample-app";
+    options.Otel.ExporterOtlpEndpoint = "http://localhost:4318";
+    options.MonitoredProcesses.Add(new ErlangMonitoredProcess("sample_sup", "supervisor", "Top-level supervisor"));
+});
+```
+
+`AddErlangApp(...)` runs the resource through `rebar3 shell --apps <app>` and registers dashboard commands for:
+
+- compiling the rebar3 project,
+- cleaning the project build output,
+- describing OTEL configuration, and
+- describing monitored Erlang process groups.

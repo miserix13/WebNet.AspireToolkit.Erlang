@@ -6,6 +6,9 @@ namespace WebNet.AspireToolkit.Erlang
     {
         private readonly string[] startupArguments;
         private readonly KeyValuePair<string, string>[] environmentVariables;
+        private readonly ErtsRuntimePackageOption[] runtimePackageOptions;
+        private readonly object runtimePackageSync = new();
+        private ErtsRuntimePackageSelection selectedRuntimePackage;
 
         public ErtsResource(string name, string ertsHome)
             : this(name, ertsHome, new ErtsResourceOptions())
@@ -27,6 +30,8 @@ namespace WebNet.AspireToolkit.Erlang
             Cookie = NormalizeOptional(options.Cookie);
             startupArguments = BuildStartupArguments(options, NodeName, UseShortName, Cookie);
             environmentVariables = BuildEnvironmentVariables(options);
+            runtimePackageOptions = BuildRuntimePackageOptions(options);
+            EnableRuntimePackageCommands = options.EnableRuntimePackageCommands && runtimePackageOptions.Length > 0;
         }
 
         public string ErtsHome { get; }
@@ -39,9 +44,61 @@ namespace WebNet.AspireToolkit.Erlang
 
         public string Cookie { get; }
 
+        public bool EnableRuntimePackageCommands { get; }
+
         public IReadOnlyList<string> StartupArguments => startupArguments;
 
         public IReadOnlyList<KeyValuePair<string, string>> EnvironmentVariables => environmentVariables;
+
+        public IReadOnlyList<ErtsRuntimePackageOption> RuntimePackageOptions => runtimePackageOptions;
+
+        public ErtsRuntimePackageSelection SelectedRuntimePackage
+        {
+            get
+            {
+                lock (runtimePackageSync)
+                {
+                    return selectedRuntimePackage;
+                }
+            }
+        }
+
+        public IReadOnlyList<ErtsPlatform> SupportedRuntimePackagePlatforms =>
+            runtimePackageOptions
+                .Select(option => option.Platform)
+                .Distinct()
+                .ToArray();
+
+        public ErtsRuntimePackageSelection SelectRuntimePackage(ErtsPlatform platform, string optionName)
+        {
+            var selectedOption = ResolveRuntimePackageOption(platform, optionName);
+            var selection = new ErtsRuntimePackageSelection(selectedOption.Platform, selectedOption.OptionName);
+
+            lock (runtimePackageSync)
+            {
+                selectedRuntimePackage = selection;
+            }
+
+            return selection;
+        }
+
+        public ErtsRuntimePackageOption ResolveRuntimePackageOption(ErtsPlatform platform, string optionName)
+        {
+            var normalizedOptionName = ValidateRequired(optionName, nameof(optionName));
+
+            foreach (var runtimePackageOption in runtimePackageOptions)
+            {
+                if (runtimePackageOption.Platform == platform &&
+                    string.Equals(runtimePackageOption.OptionName, normalizedOptionName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return runtimePackageOption;
+                }
+            }
+
+            throw new ArgumentException(
+                $"Unknown runtime package option '{normalizedOptionName}' for platform '{platform}'.",
+                nameof(optionName));
+        }
 
         private static string ResolveCommand(string ertsHome, ErtsResourceOptions options)
         {
@@ -106,6 +163,29 @@ namespace WebNet.AspireToolkit.Erlang
             }
 
             return variables.ToArray();
+        }
+
+        private static ErtsRuntimePackageOption[] BuildRuntimePackageOptions(ErtsResourceOptions options)
+        {
+            var packageOptions = new List<ErtsRuntimePackageOption>();
+            var knownOptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var runtimePackageOption in options.RuntimePackageOptions)
+            {
+                ArgumentNullException.ThrowIfNull(runtimePackageOption);
+
+                var optionKey = $"{runtimePackageOption.Platform}:{runtimePackageOption.OptionName}";
+                if (!knownOptions.Add(optionKey))
+                {
+                    throw new ArgumentException(
+                        $"Duplicate runtime package option '{runtimePackageOption.OptionName}' for platform '{runtimePackageOption.Platform}'.",
+                        nameof(options));
+                }
+
+                packageOptions.Add(runtimePackageOption);
+            }
+
+            return packageOptions.ToArray();
         }
 
         private static string GetDefaultExecutableName()

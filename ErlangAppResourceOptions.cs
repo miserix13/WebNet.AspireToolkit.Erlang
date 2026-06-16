@@ -1,0 +1,44 @@
+using Aspire.Hosting;
+
+namespace WebNet.AspireToolkit.Erlang
+{
+    [AspireExport(ExposeProperties = true)]
+    public sealed class ErlangAppResourceOptions
+    {
+        public ErlangAppResourceOptions()
+        {
+            Profile = "default";
+            RunCommand = "shell";
+            CompileArguments = new List<string>();
+            RunArguments = new List<string>();
+            EnvironmentVariables = new Dictionary<string, string>(StringComparer.Ordinal);
+            MonitoredProcesses = new List<ErlangMonitoredProcess>();
+            Otel = new ErlangOtelOptions();
+            EnableBuildCommands = true;
+            EnableMonitoringCommands = true;
+            EnableTelemetryCommands = true;
+        }
+
+        public string Rebar3ExecutablePath { get; set; }
+
+        public string Profile { get; set; }
+
+        public string RunCommand { get; set; }
+
+        public bool EnableBuildCommands { get; set; }
+
+        public bool EnableMonitoringCommands { get; set; }
+
+        public bool EnableTelemetryCommands { get; set; }
+
+        public IList<string> CompileArguments { get; }
+
+        public IList<string> RunArguments { get; }
+
+        public IDictionary<string, string> EnvironmentVariables { get; }
+
+        public IList<ErlangMonitoredProcess> MonitoredProcesses { get; }
+
+        public ErlangOtelOptions Otel { get; }
+    }
+}
