@@ -80,3 +80,22 @@ builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "samp
 - cleaning the project build output,
 - describing OTEL configuration, and
 - describing monitored Erlang process groups.
+
+## TypeScript AppHost sample
+
+This repository now includes a minimal rebar3 sample app at `Samples\HelloErlangRebar3` and wires the local integration package into the TypeScript AppHost through `aspire.config.json`.
+
+The sample AppHost expects:
+
+- `ERTS_HOME` (or `ERLANG_HOME`) to point at the Erlang installation root, such as `D:\Erlang OTP`
+- either `REBAR3_PATH` on `PATH`, or `REBAR3_ESCRIPT` pointing at a local `rebar3` escript file
+
+The sample wrapper at `Samples\HelloErlangRebar3\tools\rebar3.cmd` uses `REBAR3_ESCRIPT` with `%ERTS_HOME%\bin\escript.exe` when `rebar3` is not already installed on `PATH`.
+
+With those variables set, the TypeScript AppHost can start the sample with:
+
+```powershell
+$env:ERTS_HOME = 'D:\Erlang OTP'
+$env:REBAR3_ESCRIPT = 'C:\path\to\rebar3'
+aspire start --isolated --non-interactive
+```

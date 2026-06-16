@@ -1,0 +1,21 @@
+{
+  "appHost": {
+    "path": "apphost.mts",
+    "language": "typescript/nodejs"
+  },
+  "sdk": {
+    "version": "13.4.3"
+  },
+  "packages": {
+    "WebNet.AspireToolkit.Erlang": ".\\WebNet.AspireToolkit.Erlang.csproj"
+  },
+  "profiles": {
+    "https": {
+      "applicationUrl": "https://localhost:17213;http://localhost:15297",
+      "environmentVariables": {
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21183",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22282"
+      }
+    }
+  }
+}

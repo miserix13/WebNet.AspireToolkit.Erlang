@@ -1,7 +1,9 @@
+using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 
 namespace WebNet.AspireToolkit.Erlang
 {
+    [AspireExport(ExposeProperties = true)]
     public sealed class ErtsResource : ExecutableResource
     {
         private readonly string[] startupArguments;

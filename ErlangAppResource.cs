@@ -1,8 +1,10 @@
+using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using System.Text;
 
 namespace WebNet.AspireToolkit.Erlang
 {
+    [AspireExport(ExposeProperties = true)]
     public sealed class ErlangAppResource : ExecutableResource
     {
         private readonly string[] compileArguments;

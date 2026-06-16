@@ -2,7 +2,7 @@ using Aspire.Hosting;
 
 namespace WebNet.AspireToolkit.Erlang
 {
-    [AspireExport(ExposeProperties = true)]
+    [AspireDto]
     public sealed class ErtsResourceOptions
     {
         public ErtsResourceOptions()
@@ -26,11 +26,11 @@ namespace WebNet.AspireToolkit.Erlang
 
         public bool EnableRuntimePackageCommands { get; set; }
 
-        public IList<string> Arguments { get; }
+        public IList<string> Arguments { get; init; }
 
-        public IDictionary<string, string> EnvironmentVariables { get; }
+        public IDictionary<string, string> EnvironmentVariables { get; init; }
 
-        public IList<ErtsRuntimePackageOption> RuntimePackageOptions { get; }
+        public IList<ErtsRuntimePackageOption> RuntimePackageOptions { get; init; }
 
         private static IList<ErtsRuntimePackageOption> CreateDefaultRuntimePackageOptions()
         {

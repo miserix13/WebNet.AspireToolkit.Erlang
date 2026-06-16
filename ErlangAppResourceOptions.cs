@@ -2,7 +2,7 @@ using Aspire.Hosting;
 
 namespace WebNet.AspireToolkit.Erlang
 {
-    [AspireExport(ExposeProperties = true)]
+    [AspireDto]
     public sealed class ErlangAppResourceOptions
     {
         public ErlangAppResourceOptions()
@@ -31,14 +31,14 @@ namespace WebNet.AspireToolkit.Erlang
 
         public bool EnableTelemetryCommands { get; set; }
 
-        public IList<string> CompileArguments { get; }
+        public IList<string> CompileArguments { get; init; }
 
-        public IList<string> RunArguments { get; }
+        public IList<string> RunArguments { get; init; }
 
-        public IDictionary<string, string> EnvironmentVariables { get; }
+        public IDictionary<string, string> EnvironmentVariables { get; init; }
 
-        public IList<ErlangMonitoredProcess> MonitoredProcesses { get; }
+        public IList<ErlangMonitoredProcess> MonitoredProcesses { get; init; }
 
-        public ErlangOtelOptions Otel { get; }
+        public ErlangOtelOptions Otel { get; init; }
     }
 }

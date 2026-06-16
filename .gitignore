@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+dist/
+.aspire/
+# Erlang sample app artifacts
+Samples/HelloErlangRebar3/_build/
+Samples/HelloErlangRebar3/rebar.lock
+Samples/HelloErlangRebar3/erl_crash.dump
+Samples/HelloErlangRebar3/*.beam

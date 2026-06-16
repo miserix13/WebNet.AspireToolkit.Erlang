@@ -2,7 +2,7 @@ using Aspire.Hosting;
 
 namespace WebNet.AspireToolkit.Erlang
 {
-    [AspireExport(ExposeProperties = true)]
+    [AspireDto]
     public sealed class ErlangOtelOptions
     {
         public ErlangOtelOptions()
@@ -20,6 +20,6 @@ namespace WebNet.AspireToolkit.Erlang
 
         public string Protocol { get; set; }
 
-        public IDictionary<string, string> ResourceAttributes { get; }
+        public IDictionary<string, string> ResourceAttributes { get; init; }
     }
 }
