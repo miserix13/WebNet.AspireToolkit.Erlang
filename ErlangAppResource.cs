@@ -9,6 +9,7 @@ namespace WebNet.AspireToolkit.Erlang
     {
         private readonly string[] compileArguments;
         private readonly string[] runArguments;
+        private readonly string[] hexDependencyArguments;
         private readonly KeyValuePair<string, string>[] environmentVariables;
         private readonly ErlangMonitoredProcess[] monitoredProcesses;
         private readonly KeyValuePair<string, string>[] otelEnvironmentVariables;
@@ -36,10 +37,12 @@ namespace WebNet.AspireToolkit.Erlang
             BuildOutputDirectory = Path.Combine(ProjectDirectory, "_build", Profile, "lib", ApplicationName);
             compileArguments = BuildCompileArguments(options, Profile);
             runArguments = BuildRunArguments(options, Profile, RunCommand, ApplicationName);
+            hexDependencyArguments = BuildHexDependencyArguments(options, Profile);
             monitoredProcesses = BuildMonitoredProcesses(options);
             otelEnvironmentVariables = BuildOtelEnvironmentVariables(options, ApplicationName);
             environmentVariables = BuildEnvironmentVariables(runtimeResource, options, otelEnvironmentVariables);
             EnableBuildCommands = options.EnableBuildCommands;
+            EnableHexCommands = options.EnableHexCommands;
             EnableMonitoringCommands = options.EnableMonitoringCommands;
             EnableTelemetryCommands = options.EnableTelemetryCommands;
         }
@@ -60,6 +63,8 @@ namespace WebNet.AspireToolkit.Erlang
 
         public bool EnableBuildCommands { get; }
 
+        public bool EnableHexCommands { get; }
+
         public bool EnableMonitoringCommands { get; }
 
         public bool EnableTelemetryCommands { get; }
@@ -67,6 +72,8 @@ namespace WebNet.AspireToolkit.Erlang
         public IReadOnlyList<string> CompileArguments => compileArguments;
 
         public IReadOnlyList<string> RunArguments => runArguments;
+
+        public IReadOnlyList<string> HexDependencyArguments => hexDependencyArguments;
 
         public IReadOnlyList<KeyValuePair<string, string>> EnvironmentVariables => environmentVariables;
 
@@ -125,6 +132,16 @@ namespace WebNet.AspireToolkit.Erlang
             return builder.ToString();
         }
 
+        public string DescribeHex()
+        {
+            var builder = new StringBuilder();
+            builder.Append("Hex commands enabled: ");
+            builder.AppendLine(EnableHexCommands ? "true" : "false");
+            builder.Append("Dependency sync command: ");
+            builder.AppendLine(string.Join(" ", hexDependencyArguments));
+            return builder.ToString();
+        }
+
         private static string ResolveRebar3ExecutablePath(ErlangAppResourceOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
@@ -162,6 +179,19 @@ namespace WebNet.AspireToolkit.Erlang
             };
 
             AddValidatedArguments(arguments, options.RunArguments, nameof(options.RunArguments));
+            return arguments.ToArray();
+        }
+
+        private static string[] BuildHexDependencyArguments(ErlangAppResourceOptions options, string profile)
+        {
+            var arguments = new List<string>
+            {
+                "as",
+                profile,
+                "deps"
+            };
+
+            AddValidatedArguments(arguments, options.HexDependencyArguments, nameof(options.HexDependencyArguments));
             return arguments.ToArray();
         }
 

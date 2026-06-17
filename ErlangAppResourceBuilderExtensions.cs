@@ -70,6 +70,7 @@ namespace WebNet.AspireToolkit.Erlang
             }
 
             RegisterBuildCommands(resourceBuilder, resource);
+            RegisterHexCommands(resourceBuilder, resource);
             RegisterTelemetryCommands(resourceBuilder, resource);
             RegisterMonitoringCommands(resourceBuilder, resource);
 
@@ -124,6 +125,39 @@ namespace WebNet.AspireToolkit.Erlang
                     Description = "Show the OpenTelemetry environment and export settings wired into the Erlang application resource.",
                     Visibility = ResourceCommandVisibility.UI | ResourceCommandVisibility.Api,
                     IconName = "Pulse"
+                });
+        }
+
+        private static void RegisterHexCommands(IResourceBuilder<ErlangAppResource> resourceBuilder, ErlangAppResource resource)
+        {
+            if (!resource.EnableHexCommands)
+            {
+                return;
+            }
+
+            resourceBuilder.WithProcessCommand(
+                "sync-hex-dependencies",
+                "Sync Hex dependencies",
+                _ => CreateProcessSpec(resource, resource.HexDependencyArguments),
+                new ProcessCommandOptions
+                {
+                    MaxOutputLineCount = 200,
+                    DisplayImmediately = true
+                });
+
+            resourceBuilder.WithCommand(
+                "describe-hex",
+                "Describe Hex configuration",
+                _ => Task.FromResult(CommandResults.Success(
+                    "Hex package workflow configuration for this Erlang application resource.",
+                    resource.DescribeHex(),
+                    CommandResultFormat.Text,
+                    true)),
+                new CommandOptions
+                {
+                    Description = "Show the Hex dependency synchronization command wired into this Erlang application resource.",
+                    Visibility = ResourceCommandVisibility.UI | ResourceCommandVisibility.Api,
+                    IconName = "Package"
                 });
         }
 

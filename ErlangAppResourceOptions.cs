@@ -11,10 +11,12 @@ namespace WebNet.AspireToolkit.Erlang
             RunCommand = "shell";
             CompileArguments = new List<string>();
             RunArguments = new List<string>();
+            HexDependencyArguments = new List<string>();
             EnvironmentVariables = new Dictionary<string, string>(StringComparer.Ordinal);
             MonitoredProcesses = new List<ErlangMonitoredProcess>();
             Otel = new ErlangOtelOptions();
             EnableBuildCommands = true;
+            EnableHexCommands = true;
             EnableMonitoringCommands = true;
             EnableTelemetryCommands = true;
         }
@@ -27,6 +29,8 @@ namespace WebNet.AspireToolkit.Erlang
 
         public bool EnableBuildCommands { get; set; }
 
+        public bool EnableHexCommands { get; set; }
+
         public bool EnableMonitoringCommands { get; set; }
 
         public bool EnableTelemetryCommands { get; set; }
@@ -34,6 +38,8 @@ namespace WebNet.AspireToolkit.Erlang
         public IList<string> CompileArguments { get; init; }
 
         public IList<string> RunArguments { get; init; }
+
+        public IList<string> HexDependencyArguments { get; init; }
 
         public IDictionary<string, string> EnvironmentVariables { get; init; }
 

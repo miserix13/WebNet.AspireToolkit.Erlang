@@ -67,6 +67,7 @@ var runtime = builder.AddErts("erlang", @"C:\Program Files\Erlang OTP");
 builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "sample_app", options =>
 {
     options.Profile = "prod";
+    options.HexDependencyArguments.Add("--verbose");
     options.Otel.Enabled = true;
     options.Otel.ServiceName = "sample-app";
     options.Otel.ExporterOtlpEndpoint = "http://localhost:4318";
@@ -78,6 +79,8 @@ builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "samp
 
 - compiling the rebar3 project,
 - cleaning the project build output,
+- synchronizing Hex-backed dependencies (`rebar3 as <profile> deps`),
+- describing the configured Hex dependency command,
 - describing OTEL configuration, and
 - describing monitored Erlang process groups.
 

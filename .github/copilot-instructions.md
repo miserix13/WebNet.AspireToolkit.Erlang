@@ -2,30 +2,38 @@
 
 ## Build, test, and lint commands
 
-- Build the library: `dotnet build WebNet.AspireToolkit.Erlang.csproj`
-- Restore packages only: `dotnet restore WebNet.AspireToolkit.Erlang.csproj`
-- Build the solution including tests: `dotnet build WebNet.AspireToolkit.Erlang.slnx`
-- Run the full test project: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj`
-- Run a single test: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj --filter FullyQualifiedName~WebNet.AspireToolkit.Erlang.Tests.ErtsResourceTests.ConstructorBuildsCommandAndStartupArguments`
-- There is currently no dedicated lint or format command checked into this repository.
+- Restore .NET packages: `dotnet restore WebNet.AspireToolkit.Erlang.csproj`
+- Build the integration library: `dotnet build WebNet.AspireToolkit.Erlang.csproj`
+- Build library + tests: `dotnet build WebNet.AspireToolkit.Erlang.slnx`
+- Run the full .NET test suite: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj`
+- Run a single .NET test: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj --filter FullyQualifiedName~WebNet.AspireToolkit.Erlang.Tests.ErlangAppResourceTests.AddErlangAppRegistersExecutionAndDashboardCommands`
+- Lint the TypeScript AppHost file: `npm run lint`
+- Type-check/build the TypeScript AppHost file: `npm run build`
+- Run AppHost in dev flow (pre-lints, then `aspire run`): `npm run dev`
 
 ## High-level architecture
 
-- This repository is an Aspire integration library, not an AppHost or runnable sample. The root project ships the reusable Erlang resource types, and `Tests\WebNet.AspireToolkit.Erlang.Tests` exercises them with xUnit and Aspire's in-memory `DistributedApplication` builder.
-- The package targets `net10.0` and references `Aspire.Hosting` plus `MessagePack`, so additions should extend the integration surface area rather than introduce app-specific orchestration code.
-- The runtime layer is still `ErtsResource`, but the library now has a second layer for workloads: `ErlangAppResource` models a rebar3-backed Erlang application that compiles and runs on top of an `ErtsResource`.
-- `ErtsResourceBuilderExtensions` owns runtime registration and dashboard package-management commands, while `ErlangAppResourceBuilderExtensions` owns rebar3 compile/clean commands, OTEL description, and monitoring description commands.
-- Registration is intentionally front-loaded. Both `AddErts(...)` and `AddErlangApp(...)` build validated resource state first, then mirror computed arguments and environment variables into Aspire annotations with `WithArgs(...)`, `WithEnvironment(...)`, `WithCommand(...)`, and `WithProcessCommand(...)`.
-- Runtime launch data is computed once from the resource/options pair: `ErtsResource` resolves to `<ertsHome>\bin\<erl or erl.exe>`, while `ErlangAppResource` resolves to `rebar3`/`rebar3.cmd` and computes compile/run arguments, build output path, OTEL environment, and monitored-process metadata up front.
-- The tests are the best guide to the intended contract: they assert stored resource state plus the Aspire command/environment/argument annotations added during registration.
+- This repository’s primary deliverable is a reusable Aspire integration package (`WebNet.AspireToolkit.Erlang.csproj`), not a standalone app. The root C# files define integration primitives; `Tests\WebNet.AspireToolkit.Erlang.Tests` asserts the resource contract via Aspire’s in-memory builder.
+- There are two resource layers with a strict split:
+  - `ErtsResource` models Erlang runtime installation/launch and optional runtime-package workflows.
+  - `ErlangAppResource` models a rebar3-backed application that compiles and runs on top of an `ErtsResource`.
+- Builder extensions are the registration surface:
+  - `ErtsResourceBuilderExtensions` adds runtime resources and dashboard commands (`list-runtime-packages`, `select-runtime-package`).
+  - `ErlangAppResourceBuilderExtensions` adds app resources and dashboard/process commands for compile/clean, Hex dependency sync/description, OTEL description, and monitored-process description.
+- Resource construction is front-loaded and normalized before registration. Constructors compute command paths, arguments, environment, and derived metadata first; extension methods then project that state into Aspire annotations (`WithArgs`, `WithEnvironment`, `WithCommand`, `WithProcessCommand`).
+- The repository also contains a TypeScript AppHost entrypoint (`apphost.mts`) configured through `aspire.config.json` to consume this local package and run `Samples\HelloErlangRebar3`. This is a usage scaffold, while the core contract remains the library APIs and tests.
 
 ## Key conventions
 
-- Keep library code in the root project unless a task explicitly requires test updates; `WebNet.AspireToolkit.Erlang.csproj` explicitly removes `Tests\**` from its compile items.
-- Follow the existing C# style: block-scoped namespaces and straightforward public types under the `WebNet.AspireToolkit.Erlang` namespace.
-- Preserve the current project settings unless there is a deliberate reason to change them: nullable reference types are disabled, reference assemblies are not produced, and warning level is set to `0` for both Debug and Release.
-- Treat `README.md` as the product contract. This package is meant to model Aspire/Erlang integration primitives, so prefer resource types, builder extensions, and Aspire annotations over standalone executables or sample-specific behavior.
-- Keep the phase-one configuration flow intact: callers mutate `ErtsResourceOptions` in the `configure` callback, then `ErtsResource` validates and normalizes that data before registration.
-- Match the current validation and defaulting behavior when extending the API: blank required values throw, blank optional strings normalize to `null`, `UseShortName` defaults to `true`, environment variables use `StringComparer.Ordinal`, and the default executable name remains OS-specific unless explicitly overridden.
-- Keep the runtime/application split intact: ERTS installation, runtime flags, and package-management choices belong on `ErtsResource`; source compilation, rebar3 execution, OTEL wiring, and monitored Erlang-process metadata belong on `ErlangAppResource`.
-- For app execution, the first supported workflow is a **rebar3 project**. New compile/run behavior should extend that shape rather than introducing unrelated project models into the same options type.
+- Keep integration source in the root project files; tests live under `Tests\...` and are intentionally excluded from the package compile items.
+- Preserve project-level compile settings unless a change requires otherwise: nullable is disabled, reference assemblies are disabled, warning level is `0`.
+- Keep the options-first API flow: callers mutate options in the `configure` callback, then resource constructors validate/normalize and throw on invalid required values.
+- Preserve normalization and defaults:
+  - required string inputs reject null/empty/whitespace,
+  - optional strings normalize to `null`,
+  - dictionaries use `StringComparer.Ordinal`,
+  - default executables are OS-specific (`erl.exe`/`erl`, `rebar3.cmd`/`rebar3`),
+  - `ErtsResourceOptions.UseShortName` defaults to `true`.
+- Keep concerns separated: runtime installation/package-selection belongs on `ErtsResource`; rebar3 compile/run, OTEL, and monitored-process metadata belong on `ErlangAppResource`.
+- Treat tests as the behavioral contract for registration: they validate both persisted resource state and Aspire annotations/commands attached by the builder extensions.
+- Keep the TypeScript AppHost assumptions intact when touching sample orchestration: it expects `ERTS_HOME` or `ERLANG_HOME`, and `REBAR3_PATH` or the sample `tools\rebar3.cmd` wrapper.

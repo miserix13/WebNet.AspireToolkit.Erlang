@@ -28,6 +28,8 @@ await builder.addErlangApp(
         rebar3ExecutablePath: rebar3Path,
         profile: 'default',
         runCommand: 'shell',
+        enableHexCommands: true,
+        hexDependencyArguments: ['--verbose'],
         environmentVariables: {
             ERL_FLAGS: '+S 2:2'
         },
