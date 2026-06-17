@@ -25,7 +25,7 @@ namespace WebNet.AspireToolkit.Erlang
         {
             ArgumentNullException.ThrowIfNull(options);
 
-            ErtsHome = ValidateRequired(ertsHome, nameof(ertsHome));
+            ErtsHome = ResolveErtsHome(ertsHome);
             ExecutableName = string.IsNullOrWhiteSpace(options.ExecutableName) ? GetDefaultExecutableName() : options.ExecutableName;
             NodeName = NormalizeOptional(options.NodeName);
             UseShortName = options.UseShortName;
@@ -106,7 +106,7 @@ namespace WebNet.AspireToolkit.Erlang
         {
             ArgumentNullException.ThrowIfNull(options);
 
-            var root = ValidateRequired(ertsHome, nameof(ertsHome));
+            var root = ResolveErtsHome(ertsHome);
             var executableName = string.IsNullOrWhiteSpace(options.ExecutableName) ? GetDefaultExecutableName() : options.ExecutableName;
 
             return Path.Combine(root, "bin", executableName);
@@ -117,8 +117,33 @@ namespace WebNet.AspireToolkit.Erlang
             ArgumentNullException.ThrowIfNull(options);
 
             return string.IsNullOrWhiteSpace(options.WorkingDirectory)
-                ? ValidateRequired(ertsHome, nameof(ertsHome))
+                ? ResolveErtsHome(ertsHome)
                 : options.WorkingDirectory;
+        }
+
+        private static string ResolveErtsHome(string ertsHome)
+        {
+            var resolvedHome = NormalizeOptional(ertsHome);
+
+            if (string.IsNullOrWhiteSpace(resolvedHome))
+            {
+                resolvedHome = NormalizeOptional(Environment.GetEnvironmentVariable("ERTS_HOME")) ??
+                    NormalizeOptional(Environment.GetEnvironmentVariable("ERLANG_HOME"));
+            }
+
+            resolvedHome = NormalizeOptional(resolvedHome);
+            if (string.IsNullOrWhiteSpace(resolvedHome))
+            {
+                throw new ArgumentException("Value cannot be null, empty, or whitespace.", nameof(ertsHome));
+            }
+
+            var expandedPath = NormalizeOptional(Environment.ExpandEnvironmentVariables(resolvedHome));
+            if (string.IsNullOrWhiteSpace(expandedPath))
+            {
+                throw new ArgumentException("Value cannot be null, empty, or whitespace.", nameof(ertsHome));
+            }
+
+            return Path.GetFullPath(expandedPath);
         }
 
         private static string[] BuildStartupArguments(ErtsResourceOptions options, string nodeName, bool useShortName, string cookie)

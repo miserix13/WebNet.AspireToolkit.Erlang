@@ -96,5 +96,72 @@ namespace WebNet.AspireToolkit.Erlang.Tests
             Assert.Equal(ErtsPlatform.Linux, resource.SelectedRuntimePackage.Platform);
             Assert.Equal("apt", resource.SelectedRuntimePackage.OptionName);
         }
+
+        [Fact]
+        public void ConstructorResolvesErtsHomeFromEnvironmentWhenInputIsMissing()
+        {
+            var previousErtsHome = Environment.GetEnvironmentVariable("ERTS_HOME");
+            var previousErlangHome = Environment.GetEnvironmentVariable("ERLANG_HOME");
+
+            try
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", @"C:\otp\erts-home");
+                Environment.SetEnvironmentVariable("ERLANG_HOME", null);
+
+                var resource = new ErtsResource("erlang", null, new ErtsResourceOptions());
+
+                Assert.Equal(Path.GetFullPath(@"C:\otp\erts-home"), resource.ErtsHome);
+                Assert.Equal(Path.Combine(Path.GetFullPath(@"C:\otp\erts-home"), "bin", OperatingSystem.IsWindows() ? "erl.exe" : "erl"), resource.Command);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", previousErtsHome);
+                Environment.SetEnvironmentVariable("ERLANG_HOME", previousErlangHome);
+            }
+        }
+
+        [Fact]
+        public void ConstructorFallsBackToErlangHomeWhenErtsHomeIsMissing()
+        {
+            var previousErtsHome = Environment.GetEnvironmentVariable("ERTS_HOME");
+            var previousErlangHome = Environment.GetEnvironmentVariable("ERLANG_HOME");
+
+            try
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", null);
+                Environment.SetEnvironmentVariable("ERLANG_HOME", @"C:\otp\erlang-home");
+
+                var resource = new ErtsResource("erlang", null, new ErtsResourceOptions());
+
+                Assert.Equal(Path.GetFullPath(@"C:\otp\erlang-home"), resource.ErtsHome);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", previousErtsHome);
+                Environment.SetEnvironmentVariable("ERLANG_HOME", previousErlangHome);
+            }
+        }
+
+        [Fact]
+        public void ConstructorExpandsEnvironmentVariablesInErtsHomePath()
+        {
+            var previousErtsHome = Environment.GetEnvironmentVariable("ERTS_HOME");
+            var previousErlangHome = Environment.GetEnvironmentVariable("ERLANG_HOME");
+
+            try
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", @"C:\otp\expanded");
+                Environment.SetEnvironmentVariable("ERLANG_HOME", null);
+
+                var resource = new ErtsResource("erlang", @"%ERTS_HOME%", new ErtsResourceOptions());
+
+                Assert.Equal(Path.GetFullPath(@"C:\otp\expanded"), resource.ErtsHome);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ERTS_HOME", previousErtsHome);
+                Environment.SetEnvironmentVariable("ERLANG_HOME", previousErlangHome);
+            }
+        }
     }
 }
