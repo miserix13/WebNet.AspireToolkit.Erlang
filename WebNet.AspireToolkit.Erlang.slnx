@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="WebNet.AspireToolkit.Erlang.csproj" />
+  <Project Path="WebNet.AspireToolkit.Erlang\WebNet.AspireToolkit.Erlang.csproj" />
   <Project Path="Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj" />
 </Solution>
