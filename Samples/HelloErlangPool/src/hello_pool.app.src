@@ -1,0 +1,8 @@
+{application, hello_pool, [
+    {description, "Gen_server worker pool OTP sample"},
+    {vsn, "1.0.0"},
+    {registered, [hello_pool_sup, hello_pool_manager]},
+    {modules, [hello_pool_app, hello_pool_sup, hello_pool_manager]},
+    {applications, [kernel, stdlib]},
+    {env, []}
+]}.

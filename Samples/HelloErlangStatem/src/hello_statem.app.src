@@ -1,0 +1,8 @@
+{application, hello_statem, [
+    {description, "Gen_statem finite state machine OTP sample"},
+    {vsn, "1.0.0"},
+    {registered, [hello_statem_sup, hello_statem_registry]},
+    {modules, [hello_statem_app, hello_statem_sup, hello_statem_instance, hello_statem_registry]},
+    {applications, [kernel, stdlib]},
+    {env, []}
+]}.

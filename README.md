@@ -84,21 +84,90 @@ builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "samp
 - describing OTEL configuration, and
 - describing monitored Erlang process groups.
 
-## TypeScript AppHost sample
+## TypeScript AppHost samples
 
-This repository now includes a minimal rebar3 sample app at `Samples\HelloErlangRebar3` and wires the local integration package into the TypeScript AppHost through `aspire.config.json`.
+This repository includes multiple rebar3 sample applications in `Samples\` to demonstrate different OTP patterns. All samples are wired into the TypeScript AppHost through `aspire.config.json`.
 
-The sample AppHost expects:
+### Available samples
+
+The AppHost supports sample selection via the `ASPIRE_SAMPLE` environment variable:
+
+#### 1. `hello_rebar3` (default)
+**Path**: `Samples\HelloErlangRebar3`
+
+A basic Erlang application demonstrating:
+- Standard OTP application structure
+- Supervisor tree (`hello_erlang_sup`)
+- Gen_server behavior (`hello_erlang_server`)
+- Monitored process groups tracked by Aspire
+
+**When to use**: Learning the basics of OTP, understanding application startup/shutdown.
+
+**Run with**:
+```powershell
+$env:ASPIRE_SAMPLE = 'hello_rebar3'
+aspire start --isolated --non-interactive
+```
+
+#### 2. `hello_pool`
+**Path**: `Samples\HelloErlangPool`
+
+A gen_server worker pool pattern demonstrating:
+- Pool manager state machine (`hello_pool_manager`)
+- Dynamic worker spawning and lifecycle management
+- Task distribution across available workers
+- Pool exhaustion handling
+
+**When to use**: Building systems with request/task distribution, worker patterns, resource pooling.
+
+**OTP patterns**: Supervisor trees, gen_server state management, worker lifecycle.
+
+**Run with**:
+```powershell
+$env:ASPIRE_SAMPLE = 'hello_pool'
+aspire start --isolated --non-interactive
+```
+
+#### 3. `hello_statem`
+**Path**: `Samples\HelloErlangStatem`
+
+A gen_statem finite state machine pattern demonstrating:
+- State machine definition and transitions
+- State-driven event handling (idle → processing → complete/error)
+- Registry tracking active state machines
+- Event-based state control
+
+**When to use**: Protocol implementation, workflow engines, business state machines, game loops.
+
+**OTP patterns**: Gen_statem callback module, state enter/exit handlers, conditional transitions.
+
+**Run with**:
+```powershell
+$env:ASPIRE_SAMPLE = 'hello_statem'
+aspire start --isolated --non-interactive
+```
+
+### Running samples
+
+All samples expect:
 
 - `ERTS_HOME` (or `ERLANG_HOME`) to point at the Erlang installation root, such as `D:\Erlang OTP`
 - either `REBAR3_PATH` on `PATH`, or `REBAR3_ESCRIPT` pointing at a local `rebar3` escript file
 
-The sample wrapper at `Samples\HelloErlangRebar3\tools\rebar3.cmd` uses `REBAR3_ESCRIPT` with `%ERTS_HOME%\bin\escript.exe` when `rebar3` is not already installed on `PATH`.
+The sample wrappers at `Samples\*\tools\rebar3.cmd` use `REBAR3_ESCRIPT` with `%ERTS_HOME%\bin\escript.exe` when `rebar3` is not already installed on `PATH`.
 
-With those variables set, the TypeScript AppHost can start the sample with:
+**Setup and run a sample**:
 
 ```powershell
 $env:ERTS_HOME = 'D:\Erlang OTP'
 $env:REBAR3_ESCRIPT = 'C:\path\to\rebar3'
+$env:ASPIRE_SAMPLE = 'hello_pool'  # or 'hello_statem', 'hello_rebar3'
 aspire start --isolated --non-interactive
 ```
+
+The TypeScript AppHost will:
+1. Start the Erlang runtime resource
+2. Load and compile the selected sample application
+3. Start the application in `rebar3 shell`
+4. Register monitored processes with the Aspire dashboard
+5. Enable OTEL tracing for the application

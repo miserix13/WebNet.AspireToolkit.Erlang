@@ -2,14 +2,19 @@
 
 ## Build, test, and lint commands
 
+### .NET commands
 - Restore .NET packages: `dotnet restore WebNet.AspireToolkit.Erlang.csproj`
 - Build the integration library: `dotnet build WebNet.AspireToolkit.Erlang.csproj`
 - Build library + tests: `dotnet build WebNet.AspireToolkit.Erlang.slnx`
 - Run the full .NET test suite: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj`
 - Run a single .NET test: `dotnet test Tests\WebNet.AspireToolkit.Erlang.Tests\WebNet.AspireToolkit.Erlang.Tests.csproj --filter FullyQualifiedName~WebNet.AspireToolkit.Erlang.Tests.ErlangAppResourceTests.AddErlangAppRegistersExecutionAndDashboardCommands`
+- Refresh TypeScript bindings after C# API changes: `aspire restore` (run from `Samples` folder)
+
+### TypeScript AppHost commands (run from `Samples` folder)
 - Lint the TypeScript AppHost file: `npm run lint`
 - Type-check/build the TypeScript AppHost file: `npm run build`
 - Run AppHost in dev flow (pre-lints, then `aspire run`): `npm run dev`
+- Run TypeScript compiler in watch mode: `npm run watch`
 
 ## High-level architecture
 
@@ -22,6 +27,11 @@
   - `ErlangAppResourceBuilderExtensions` adds app resources and dashboard/process commands for compile/clean, Hex dependency sync/description, OTEL description, and monitored-process description.
 - Resource construction is front-loaded and normalized before registration. Constructors compute command paths, arguments, environment, and derived metadata first; extension methods then project that state into Aspire annotations (`WithArgs`, `WithEnvironment`, `WithCommand`, `WithProcessCommand`).
 - The repository also contains a TypeScript AppHost entrypoint (`apphost.mts`) configured through `aspire.config.json` to consume this local package and run `Samples\HelloErlangRebar3`. This is a usage scaffold, while the core contract remains the library APIs and tests.
+
+### TypeScript AppHost SDK generation
+- The `.aspire/modules` folder contains auto-generated TypeScript bindings created by Aspire during `aspire restore`.
+- When C# Aspire APIs in `ErtsResourceBuilderExtensions` or `ErlangAppResourceBuilderExtensions` change, regenerate bindings with `aspire restore` from the `Samples` folder.
+- The AppHost assumes environment variables `ERTS_HOME` (or `ERLANG_HOME`) and either `REBAR3_PATH` or a local `rebar3.cmd` wrapper (e.g., `Samples\HelloErlangRebar3\tools\rebar3.cmd`).
 
 ## Key conventions
 
