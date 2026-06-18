@@ -1,0 +1,20 @@
+{application, apphost, [
+    {description, "Erlang AppHost for Aspire orchestration"},
+    {vsn, "0.1.0"},
+    {registered, [apphost_coordinator, apphost_json_rpc]},
+    {modules, [
+        apphost_app,
+        apphost_sup,
+        apphost_coordinator,
+        apphost_json_rpc,
+        apphost_socket,
+        apphost_resource_mgr,
+        apphost_config
+    ]},
+    {applications, [kernel, stdlib]},
+    {env, [
+        {aspire_socket_path, undefined},
+        {aspire_token, undefined},
+        {resource_config, []}
+    ]}
+]}.
