@@ -88,6 +88,39 @@ builder.AddErlangApp("sample-app", runtime.Resource, @"C:\src\sample-app", "samp
 
 This repository includes multiple rebar3 sample applications in `Samples\` to demonstrate different OTP patterns. All samples are wired into the TypeScript AppHost through `aspire.config.json`.
 
+### TypeScript AppHost usage
+
+The main AppHost entrypoint lives at `Samples\apphost.mts`. It loads the local package declared in `Samples\aspire.config.json`, creates an Erlang runtime resource, and then attaches the selected rebar3 application resource:
+
+```ts
+import { join, resolve } from 'node:path';
+import { createBuilder } from './.aspire/modules/aspire.mjs';
+
+const builder = await createBuilder();
+const ertsHome = process.env.ERTS_HOME ?? process.env.ERLANG_HOME;
+const sampleAppPath = resolve('.\\Samples\\HelloErlangRebar3');
+const rebar3Path = process.env.REBAR3_PATH ?? join(sampleAppPath, 'tools', 'rebar3.cmd');
+
+const erlangRuntime = await builder.addErts('erlang-runtime', ertsHome, {
+    enableRuntimePackageCommands: true
+});
+
+await builder.addErlangApp('hello_rebar3-app', erlangRuntime, sampleAppPath, 'hello_erlang', {
+    rebar3ExecutablePath: rebar3Path,
+    enableHexCommands: true
+});
+```
+
+Before running the AppHost from `Samples\`, restore the generated Aspire TypeScript SDK and install the existing npm dependencies:
+
+```powershell
+cd Samples
+npm ci
+aspire restore
+```
+
+`aspire restore` generates the local `Samples\.aspire\modules\aspire.mjs` bindings consumed by `apphost.mts`. Without that step, `npm run build` cannot resolve `createBuilder`.
+
 ### Available samples
 
 The AppHost supports sample selection via the `ASPIRE_SAMPLE` environment variable:
@@ -152,16 +185,19 @@ aspire start --isolated --non-interactive
 All samples expect:
 
 - `ERTS_HOME` (or `ERLANG_HOME`) to point at the Erlang installation root, such as `D:\Erlang OTP`
-- either `REBAR3_PATH` on `PATH`, or `REBAR3_ESCRIPT` pointing at a local `rebar3` escript file
+- either `REBAR3_PATH` pointing at a `rebar3` executable, or the sample-local `tools\rebar3.cmd` wrapper with `REBAR3_ESCRIPT` pointing at a local `rebar3` escript file
 
 The sample wrappers at `Samples\*\tools\rebar3.cmd` use `REBAR3_ESCRIPT` with `%ERTS_HOME%\bin\escript.exe` when `rebar3` is not already installed on `PATH`.
 
 **Setup and run a sample**:
 
 ```powershell
+cd Samples
+$env:ASPIRE_SAMPLE = 'hello_pool'  # or 'hello_statem', 'hello_rebar3'
 $env:ERTS_HOME = 'D:\Erlang OTP'
 $env:REBAR3_ESCRIPT = 'C:\path\to\rebar3'
-$env:ASPIRE_SAMPLE = 'hello_pool'  # or 'hello_statem', 'hello_rebar3'
+aspire restore
+npm run build
 aspire start --isolated --non-interactive
 ```
 
